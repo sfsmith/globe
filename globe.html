@@ -1,0 +1,168 @@
+<html>
+
+<head>
+
+  <!-- import EXTJS packaged libraries -->
+  <script src="ExtJS-3.4.0/adapter/ext/ext-base.js" type="text/javascript"></script>
+  <script src="ExtJS-3.4.0/ext-all.js"  type="text/javascript"></script>
+  <link href="ExtJS-3.4.0/resources/css/ext-all.css" rel="stylesheet" type="text/css" ></link>
+  <link href="ExtJS-3.4.0/resources/css/xtheme-gray.css" rel="stylesheet" type="text/css"><link/>
+
+  <!-- import OpenLayers packaged libraries -->
+  <script src="OpenLayers-2.11/OpenLayers.js" type="text/javascript"></script>
+
+  <!-- import GEOEXT packaged libraries -->
+  <script src="GeoExt-1.1/lib/GeoExt.js" type="text/javascript"></script>
+  <link href="GeoExt-1.1/resources/css/geoext-all-debug.css"rel="stylesheet" type="text/css"></link>
+
+  <!-- request external mapping sources -->
+  <!--script src="http://www.openstreetmap.org/openlayers/OpenStreetMap.js"></script-->
+  <!--script src="http://maps.google.com/maps?file=api&amp;v=2&amp;sensor=false&amp;key=ABQIAAAA5Ztx88QwtOeeIE9fcxdH7hSFdidwT5FdENPW8bKk77ChUD5nXBTZy8bA4XHurzXNFDVNubnm4NR1cQ" type="text/javascript"></script-->
+
+  <!-- import custom JS/CSS libraries -->
+  <!--script src="/geoext/JScripts.js" type="text/javascript"></script-->
+  <!--link href="/geoext/Style.css" rel="stylesheet" type="text/css" /-->
+
+  <script>
+
+    /// configurations
+
+    var strLayerName = "mv_air_temp_dailies2";
+    var strMinDate = "2010-01-01";
+    var strMaxDate = "2010-12-31";
+    
+    var intStartLon = -33;
+    var intStartLat = 33;
+    var intStartZoom = 3;
+
+    /// n'editez pas des qu'ici !!!
+
+    var map,wms,base,osm;
+
+    Ext.onReady(function(){
+
+      wms = new OpenLayers.Layer.WMS(
+        "Temperature Surface",
+        "/geoserver/wms",
+        { layers: strLayerName, transparent: true, viewparams: "strDate:"+strMinDate }
+      );
+
+      base = new OpenLayers.Layer.WMS(
+        "Basemap",
+        "/geoserver/wms",
+        {layers: "basemap"}
+      );
+
+      map = new OpenLayers.Map();
+      map.addLayers([wms,base]);
+
+      var mapPanel = new GeoExt.MapPanel({
+        title: "Temperature Surface Maps",
+        region: "center",
+        map: map, 
+        center: [intStartLon, intStartLat], zoom: intStartZoom
+      });
+
+      srcCombo = new Ext.form.ComboBox({
+        emptyText: "sfs",
+        store: new Ext.data.SimpleStore({
+          fields: ['val','display'],
+          data: [['a','aa'],['b','bb'],['c','cc']]
+        }),
+        displayField: "display",
+        valueField: "val",
+        selectOnFocus: true,
+        value: "a",
+        listeners: {
+          select: function(el, rec, idx) {
+            alert(el + rec + idx);
+          }
+        }
+      });
+
+      var srcPanel = new Ext.Panel({
+        title: "Set Data Source",
+        region: "center",
+        items: [srcCombo]
+      });
+
+      var dtMinDate = new Date(strMinDate);
+      var dtMaxDate = new Date(strMaxDate);
+      var dtNumDays = (dtMaxDate-dtMinDate)/86400000
+
+      var extDatePicker = new Ext.DatePicker({
+        minDate: dtMinDate,
+        maxDate: dtMaxDate,
+        handler: function (picker, date) {
+          extSlider.setValue((date.add(Date.HOUR,8)-dtMinDate)/86400000);
+          wms.mergeNewParams({VIEWPARAMS:"strDate:"+date.format("Y-m-d")});
+        }
+      });
+
+      var extSlider = new Ext.Slider({
+        width: 200,
+        increment: 1,
+        minValue: 0,
+        maxValue: dtNumDays,
+        value: 0,
+        align: "center",
+        listeners: {
+          change: function(el, val, o1) { 
+            extLabel.setText(dtMinDate.add(Date.DAY,val).format("j F Y"));
+            extDatePicker.setValue(dtMinDate.add(Date.DAY,val));
+          },
+          changecomplete: function(el, val, o1) {
+            wms.mergeNewParams({VIEWPARAMS:"strDate:"+dtMinDate.add(Date.DAY,val).format("Y-m-d")});
+          }
+        }
+      });
+
+      var extLabel = new Ext.form.Label({
+        id: "lblDate"
+      });   
+
+      extDatePicker.setValue(dtMinDate);
+      extLabel.text=dtMinDate.format("j F Y");
+
+      var calPanel = new Ext.Panel({
+        title: "Set Filter Date",
+        region: "south",
+        bodyStyle: "padding:10px",
+        items: [extLabel, extDatePicker, extSlider]
+      });
+
+      var filterPanel = new Ext.Panel({
+        title: "",
+        region: "east",
+        width: 250,
+        minSize: 250,
+        maxSize: 450,
+        collapsible: true,
+        split: true,
+        items: [srcPanel,calPanel]
+      });
+
+      var mainViewport = new Ext.Viewport({
+        renderTo: Ext.getBody(),
+        layout: "border",
+        items: [mapPanel,filterPanel]
+      });
+
+    });
+
+  </script>
+
+</head>
+
+<body bgcolor="#f5f5f5" margin="10">
+
+<center>
+
+  <div id="mainpanel" padding="10px"></div>
+
+</center>
+
+</body>
+
+</html>
+
