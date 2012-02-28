@@ -67,7 +67,7 @@
       });
 
       var extSlider = new Ext.Slider({
-        width: 200,
+        width: 180,
         increment: 1,
         minValue: 0,
         maxValue: dtNumDays,
@@ -85,7 +85,8 @@
         }
       });
 
-      // Bad hacks around the GMT-8 offset fix this (elsewhere too).
+      // NOTE: Workaround for GMT-8 offsets on timestamps without zonal info
+      // (Could probably do this more elegantly)
       extDatePicker.setValue(dtMinDate.add(Date.DAY,1));
       extLabel.text=dtMinDate.add(Date.DAY,1).format("j F Y");
 
