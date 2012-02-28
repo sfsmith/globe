@@ -41,10 +41,98 @@
 
     Ext.onReady(function(){
 
+      var extLabel = new Ext.form.Label({
+        id: "lblDate"
+      });   
+
+      var dayPanel = new Ext.Panel({
+        title: "Showing Data For ...",
+        region: "north",
+        bodyStyle: "padding:10px;border:0px;",
+        items: [extLabel]
+      });
+
+      var dtMinDate = new Date(strMinDate);
+      var dtMaxDate = new Date(strMaxDate);
+      var dtNumDays = (dtMaxDate-dtMinDate)/86400000
+
+      var extDatePicker = new Ext.DatePicker({
+        minDate: dtMinDate,
+        maxDate: dtMaxDate,
+        handler: function (el, dtVal) {
+          extSlider.setValue((dtVal.add(Date.HOUR,8)-dtMinDate)/86400000);
+          strViewParams="strDate:"+dtVal.format("Y-m-d")+";strField:"+srcRadioGroup.getValue().inputValue;
+          wms.mergeNewParams({VIEWPARAMS:strViewParams});
+        }
+      });
+
+      var extSlider = new Ext.Slider({
+        width: 200,
+        increment: 1,
+        minValue: 0,
+        maxValue: dtNumDays,
+        value: 0,
+        align: "center",
+        listeners: {
+          change: function(el, val, o1) { 
+            extLabel.setText(dtMinDate.add(Date.DAY,val).format("j F Y"));
+            extDatePicker.setValue(dtMinDate.add(Date.DAY,val));
+          },
+          changecomplete: function(el, dtVal, o1) {
+            strViewParams="strDate:"+dtMinDate.add(Date.DAY,dtVal).format("Y-m-d")+";strField:"+srcRadioGroup.getValue().inputValue;
+            wms.mergeNewParams({VIEWPARAMS:strViewParams});
+          }
+        }
+      });
+
+      // Bad hacks around the GMT-8 offset fix this (elsewhere too).
+      extDatePicker.setValue(dtMinDate.add(Date.DAY,1));
+      extLabel.text=dtMinDate.add(Date.DAY,1).format("j F Y");
+
+      var calPanel = new Ext.Panel({
+        title: "Set Filter Date >>",
+        region: "center",
+        bodyStyle: "padding:10px;border:0px;",
+        items: [extDatePicker, extSlider]
+      });
+
+      var srcRadioGroup = new Ext.form.RadioGroup({
+        columns: 1,
+        items: [
+          {boxLabel: "Current Temperature", name: "rgSrc", inputValue: "current_temp", checked: true},
+          {boxLabel: "Minimum Temperature", name: "rgSrc", inputValue: "minimum_temp"},
+          {boxLabel: "Maximum Temperature", name: "rgSrc", inputValue: "maximum_temp"}
+        ],
+        listeners: {
+          change: function(el, op1){
+            strViewParams="strDate:"+extDatePicker.getValue().format("Y-m-d")+";strField:"+op1.inputValue;
+            wms.mergeNewParams({VIEWPARAMS:strViewParams});
+          }
+        }
+      });
+
+      var srcPanel = new Ext.Panel({
+        title: "Set Data Source >>",
+        region: "south",
+        bodyStyle: "padding:10px;border:0px;",
+        items: [srcRadioGroup]
+      });
+
+      var filterPanel = new Ext.Panel({
+        title: "",
+        region: "east",
+        width: 250,
+        minSize: 250,
+        maxSize: 450,
+        collapsible: true,
+        split: true,
+        items: [dayPanel,calPanel,srcPanel]
+      });
+
       wms = new OpenLayers.Layer.WMS(
         "Temperature Surface",
         "/geoserver/wms",
-        { layers: strLayerName, transparent: true, viewparams: "strDate:"+strMinDate }
+        { layers: strLayerName, transparent: true }
       );
 
       base = new OpenLayers.Layer.WMS(
@@ -61,85 +149,6 @@
         region: "center",
         map: map, 
         center: [intStartLon, intStartLat], zoom: intStartZoom
-      });
-
-      srcCombo = new Ext.form.ComboBox({
-        emptyText: "sfs",
-        store: new Ext.data.SimpleStore({
-          fields: ['val','display'],
-          data: [['a','aa'],['b','bb'],['c','cc']]
-        }),
-        displayField: "display",
-        valueField: "val",
-        selectOnFocus: true,
-        value: "a",
-        listeners: {
-          select: function(el, rec, idx) {
-            alert(el + rec + idx);
-          }
-        }
-      });
-
-      var srcPanel = new Ext.Panel({
-        title: "Set Data Source",
-        region: "center",
-        items: [srcCombo]
-      });
-
-      var dtMinDate = new Date(strMinDate);
-      var dtMaxDate = new Date(strMaxDate);
-      var dtNumDays = (dtMaxDate-dtMinDate)/86400000
-
-      var extDatePicker = new Ext.DatePicker({
-        minDate: dtMinDate,
-        maxDate: dtMaxDate,
-        handler: function (picker, date) {
-          extSlider.setValue((date.add(Date.HOUR,8)-dtMinDate)/86400000);
-          wms.mergeNewParams({VIEWPARAMS:"strDate:"+date.format("Y-m-d")});
-        }
-      });
-
-      var extSlider = new Ext.Slider({
-        width: 200,
-        increment: 1,
-        minValue: 0,
-        maxValue: dtNumDays,
-        value: 0,
-        align: "center",
-        listeners: {
-          change: function(el, val, o1) { 
-            extLabel.setText(dtMinDate.add(Date.DAY,val).format("j F Y"));
-            extDatePicker.setValue(dtMinDate.add(Date.DAY,val));
-          },
-          changecomplete: function(el, val, o1) {
-            wms.mergeNewParams({VIEWPARAMS:"strDate:"+dtMinDate.add(Date.DAY,val).format("Y-m-d")});
-          }
-        }
-      });
-
-      var extLabel = new Ext.form.Label({
-        id: "lblDate"
-      });   
-
-      extDatePicker.setValue(dtMinDate);
-      extLabel.text=dtMinDate.format("j F Y");
-
-      var calPanel = new Ext.Panel({
-        title: "Set Filter Date",
-        region: "south",
-        bodyStyle: "padding:10px",
-        items: [extLabel, extDatePicker, extSlider]
-      });
-
-      var filterPanel = new Ext.Panel({
-        title: "",
-        region: "east",
-        width: 250,
-        minSize: 250,
-        maxSize: 450,
-        collapsible: true,
-        split: true,
-        items: [srcPanel,calPanel]
       });
 
       var mainViewport = new Ext.Viewport({
