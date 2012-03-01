@@ -52,8 +52,8 @@
         items: [extLabel]
       });
 
-      var dtMinDate = new Date(strMinDate);
-      var dtMaxDate = new Date(strMaxDate);
+      var dtMinDate = Date.parseDate(strMinDate, "Y-m-d");
+      var dtMaxDate = Date.parseDate(strMaxDate, "Y-m-d");
       var dtNumDays = (dtMaxDate-dtMinDate)/86400000
 
       var extDatePicker = new Ext.DatePicker({
@@ -85,8 +85,7 @@
         }
       });
 
-      // NOTE: Workaround for GMT-8 offsets on timestamps without zonal info
-      // (Could probably do this more elegantly)
+      // Bad hacks around the GMT-8 offset fix this (elsewhere too).
       extDatePicker.setValue(dtMinDate.add(Date.DAY,1));
       extLabel.text=dtMinDate.add(Date.DAY,1).format("j F Y");
 
