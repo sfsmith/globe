@@ -132,7 +132,8 @@
       wms = new OpenLayers.Layer.WMS(
         "Temperature Surface",
         "/geoserver/wms",
-        { layers: strLayerName, transparent: true }
+        { layers: strLayerName, transparent: true },
+        {singleTile: true}
       );
 
       base = new OpenLayers.Layer.WMS(
