@@ -1,1 +1,1 @@
-sudo cp globe.html /var/lib/tomcat6/webapps/geoserver/data/www/
+cp globe.html /var/lib/tomcat6/webapps/geoserver/data/www/
